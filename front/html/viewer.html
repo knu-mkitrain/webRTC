@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>client test : viewer</title>
+</head><script src="../js/node_modules/socket.io-client/dist/socket.io.js"></script>
+<script>
+    var socket = io.connect('http://localhost:8080/');
+    var server = {'iceServers' : [{'url':'stun:stun.l.google.com:19302'}]};
+    var connection = new RTCPeerConnection(server);
+
+    //set on addstream
+    connection.onaddstream = (e) => onAddStream(e);
+
+    socket.on('success', function (data) {
+        console.log("연결 성공",data);
+
+        //내가 viewer임을 서버에 알리고, 접속할 roomId를 전송
+        socket.emit('viewerConnected',{
+            roomId:"roomnumber1"
+        });
+
+        //create offer
+        connection.createOffer({
+            offerToReceiveAudio: 1,
+            offerToReceiveVideo: 1
+        })
+            .then((offerSdp)=>{
+                //set localSdp
+                connection.setLocalDescription(offerSdp).then(()=>{console.log('Local SDP OK',offerSdp);});
+                //set remoteSdp
+                socket.emit('sendOfferSdp',{
+                    from:socket.id,
+                    sdp:offerSdp,
+                })
+            });
+    });
+
+    //get answerSdp
+    socket.on('sendAnswerSdp',function(data){
+        //set on candidate
+        connection.onicecandidate = (e) => onCandidate(e,data.from);
+
+        var remoteSdp = data.answerSdp;
+        //set remoteSdp
+        connection.setRemoteDescription(remoteSdp)
+            .then(()=>{
+                console.log('Remote SDP OK',remoteSdp);
+            });
+    });
+
+    //get candidate
+    socket.on('sendCandidate',function(data){
+        connection.addIceCandidate(data.candidate);
+    });
+
+
+    //end broadcasting
+    socket.on('broadCastingEnd',function(data){
+        connection.close();
+        console.log("방송이 종료되었습니다.",data);
+    });
+
+    function onCandidate(e,from){
+        console.log("candidate event emit",e);
+        if(e.candidate){
+            socket.emit('sendCandidate',{
+                from:socket.id,
+                to:from,
+                candidate:e.candidate
+            })
+        }
+    }
+    function onAddStream(e){
+        const video = document.querySelector('video');
+        video.srcObject = e.stream;
+    }
+</script>
+<body>
+
+<video autoplay playsinline style="width:500px;height:500px;"></video>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>client test : broadcaster</title>
+</head><script src="../js/node_modules/socket.io-client/dist/socket.io.js"></script>
+<script>
+    var socket = io.connect('http://localhost:8080/');
+
+    var connections = {};
+
+    socket.on('success',
+        function (data) {
+            console.log("연결 성공",data);
+            console.log("id",socket.id);
+
+            getUesrMedia();
+
+            //내가 broad caster임을 서버에 알리고, 생성할 roomId를 전송
+            socket.emit('broadCasterConnected',{
+                roomId:"roomnumber1"
+            });
+        }
+    );
+
+    //get offer Sdp
+    socket.on('sendOfferSdp',function(data){
+        var remoteSdp = data.offerSdp;
+        var from = data.from;
+
+        //create new peer connection
+        createNewPeerConnection(from);
+        var curPeerConnection = connections[from];
+
+        //set media stream
+        curPeerConnection.addStream(window.stream);
+        // window.stream.getTracks().forEach((track)=>{
+        //     console.log("set media stream",curPeerConnection);
+        //     curPeerConnection.addTrack(track, window.stream)
+        // });
+
+        //set on icecandidate
+        curPeerConnection.onicecandidate = (e)=>onCandidate(e,from);
+
+        //set remoteSdp
+        curPeerConnection.setRemoteDescription(remoteSdp).then(()=>{console.log('Remote SDP OK',remoteSdp);});
+
+        //create answer
+        curPeerConnection.createAnswer()
+            .then((answerSdp)=>{
+                //set localSdp
+                curPeerConnection.setLocalDescription(answerSdp).then(()=>{console.log('Local SDP OK',answerSdp);});
+                //send answerSdp
+                socket.emit('sendAnswerSdp',{
+                    to:from,
+                    from:socket.id,
+                    sdp:answerSdp,
+                });
+
+            });
+    });
+
+
+    //get candidate
+    socket.on('sendCandidate',function(data){
+        connection.addIceCandidate(data.candidate);
+    });
+
+    function onCandidate(e,from){
+        console.log("candidate event emit",e);
+        if(e.candidate){
+            socket.emit('sendCandidate',{
+                from:socket.id,
+                to:from,
+                candidate:e.candidate
+            })
+        }
+    }
+
+    function createNewPeerConnection(from){
+        console.log("create new peer connection",connections);
+        var server = {'iceServers' : [{'url':'stun:stun.l.google.com:19302'}]};
+        connections[from] = new RTCPeerConnection(server);
+    }
+
+    function getUesrMedia(){
+        navigator.getUserMedia({
+            video:true,
+            audio:true,
+        },(media)=>setMediaCb(media),(err)=>{console.log("get media failed",err)})
+    }
+
+    function setMediaCb(stream){
+        const video = document.querySelector('video');
+        const videoTracks = stream.getVideoTracks();
+        console.log(`Using video device: ${videoTracks[0].label}`);
+        window.stream = stream; // make variable available to browser console
+        video.srcObject = stream;
+    }
+</script>
+<body>
+
+<div>
+<video autoplay playsinline style="width:500px;height:500px;"></video>
+</div>
+
+</body>
+</html>
