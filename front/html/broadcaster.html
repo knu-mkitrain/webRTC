@@ -8,11 +8,14 @@
     var socket = io.connect('http://localhost:8080/');
 
     var connections = {};
-
+    var user;
+    
     socket.on('success',
         function (data) {
             console.log("연결 성공",data);
             console.log("id",socket.id);
+
+            user = socket.id;
 
             getUesrMedia();
 
@@ -97,12 +100,38 @@
         window.stream = stream; // make variable available to browser console
         video.srcObject = stream;
     }
+
+    function sendMessage() {
+      var msg = document.getElementById('message').value;
+      if (msg) {
+          socket.emit('msg', { message: msg, user: user });
+      }
+   }
+
+   socket.on('newmsg', function (data) {
+       
+         document.getElementById('message-container').innerHTML += '<div><b>' +
+            data.user + '</b>: ' + data.message + '</div>'
+      
+   });
+
+   //앤터키 반응 함수
+   function goSearch(){
+      sendMessage();
+   }
+   function clearText(field){
+         field.value = "";
+   }
+
 </script>
 <body>
 
 <div>
 <video autoplay playsinline style="width:500px;height:500px;"></video>
 </div>
+<div><input type = "text" value = "" onkeypress="if(event.keyCode==13){goSearch();clearText(this);}"id = "message">
+         <button type = "button" name = "button" onclick = "sendMessage()">Send</button>
+         <div id = "message-container"></div>
 
 </body>
 </html>
