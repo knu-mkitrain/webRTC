@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>client test : broadcaster</title>
-</head><script src="../js/socket.io.js"></script>
+    <script src="../js/socket.io.js"></script>
+    <style>
+        html,body{
+            height:100vh;
+        }
+        html * {
+            box-sizing: border-box;
+            font-family:san-serif;
+            margin:0;
+        }
+    </style>
+</head>
 <script>
     var socket = io.connect('http://localhost:8080/');
 
     var connections = {};
     var user;
-    
+
     socket.on('success',
         function (data) {
             console.log("연결 성공",data);
@@ -102,36 +113,42 @@
     }
 
     function sendMessage() {
-      var msg = document.getElementById('message').value;
-      if (msg) {
-          socket.emit('msg', { message: msg, user: user });
-      }
-   }
+        var msg = document.getElementById('message').value;
+        if (msg) {
+            socket.emit('msg', { message: msg, user: user });
+        }
+    }
 
-   socket.on('newmsg', function (data) {
-       
-         document.getElementById('message-container').innerHTML += '<div><b>' +
-            data.user + '</b>: ' + data.message + '</div>'
-      
-   });
+    socket.on('newmsg', function (data){
+        var container = document.getElementById("message-container");
+        container.innerHTML += createMessage(data.user,data.message);
+        container.lastChild.scrollIntoView() //auto scroll to last chat
+    });
 
-   //앤터키 반응 함수
-   function goSearch(){
-      sendMessage();
-   }
-   function clearText(field){
-         field.value = "";
-   }
+    //앤터키 반응 함수
+    function goSearch(){
+        sendMessage();
+    }
+    function clearText(field){
+        field.value = "";
+    }
+    function createMessage(user,message){
+        return "<div>" +
+            "<b>"+user+"</b> : " +
+            message +
+            "</div>";
+    }
 
 </script>
+
 <body>
-
 <div>
-<video autoplay playsinline style="width:500px;height:500px;"></video>
+    <video autoplay playsinline style="width:100vw;height:60vh; background-color:black;"></video>
+    <div id="message-container" style="width:100vw;height:35vh; overflow:scroll"></div>
 </div>
-<div><input type = "text" value = "" onkeypress="if(event.keyCode==13){goSearch();clearText(this);}"id = "message">
-         <button type = "button" name = "button" onclick = "sendMessage()">Send</button>
-         <div id = "message-container"></div>
-
+<div style="display:flex; height:4.5vh;">
+    <input style="flex:9" type = "text" value = "" onkeypress="if(event.keyCode==13){goSearch();clearText(this);}" id="message">
+    <button style="flex:1" type="button" name="button" onclick="sendMessage()">Send</button>
+</div>
 </body>
 </html>
