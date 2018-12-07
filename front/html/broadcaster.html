@@ -112,6 +112,19 @@
         video.srcObject = stream;
     }
 
+    socket.on('newmsg', function (data){
+        var container = document.getElementById("message-container");
+        container.innerHTML += createMessage(data.user,data.message);
+        container.lastChild.scrollIntoView() //auto scroll to last chat
+    });
+
+    function createMessage(user,message){
+        return "<div>" +
+            "<b>"+user+"</b> : " +
+            message +
+            "</div>";
+    }
+
     function sendMessage() {
         var msg = document.getElementById('message').value;
         if (msg) {
@@ -119,24 +132,11 @@
         }
     }
 
-    socket.on('newmsg', function (data){
-        var container = document.getElementById("message-container");
-        container.innerHTML += createMessage(data.user,data.message);
-        container.lastChild.scrollIntoView() //auto scroll to last chat
-    });
-
     //앤터키 반응 함수
-    function goSearch(){
+    function onEnter(keycode){
+        if(keycode != 13) return;
         sendMessage();
-    }
-    function clearText(field){
-        field.value = "";
-    }
-    function createMessage(user,message){
-        return "<div>" +
-            "<b>"+user+"</b> : " +
-            message +
-            "</div>";
+        document.getElementById("message").value = "";
     }
 
 </script>
@@ -147,7 +147,7 @@
     <div id="message-container" style="width:100vw;height:35vh; overflow:scroll"></div>
 </div>
 <div style="display:flex; height:4.5vh;">
-    <input style="flex:9" type = "text" value = "" onkeypress="if(event.keyCode==13){goSearch();clearText(this);}" id="message">
+    <input style="flex:9" type = "text" value = "" onkeypress="onEnter(event.keyCode)" id="message">
     <button style="flex:1" type="button" name="button" onclick="sendMessage()">Send</button>
 </div>
 </body>
