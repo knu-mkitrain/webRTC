@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="first home">
+
+<head>
+    <title>
+        First Page
+    </title>
+
+</head>
+
+<script src="./js/socket.io.js"></script>
+<script>
+    var socket = io.connect('http://localhost:8080/');
+    var user;
+ //var broadcaster = html/broadcaster.html;
+   // var viewer = html/Viewer.html;
+
+    socket.on('roomChoice', function (data) {
+        console.log(data.rooms);
+        var keys = Object.keys(data.rooms);
+        // document.body.innerHTML = " "; 
+        for (var i in keys) {
+            // document.getElementById('room').innerHTML += '<div>'+keys[i]+'  '+data.rooms[keys[i]]+'</div>';
+        }
+
+    });
+
+    socket.on('userExists', function (data) {
+        document.getElementById('error-container').innerHTML = data;
+    });
+
+    socket.on('userSet',function(data){
+        user = data.username;
+        document.body.innerHTML = '<div>username : '+user+'</div>';
+        document.body.innerHTML += '<input type="button" value="Broadcaster" onclick="location.href ='+"'html/broadcaster.html'"+'"> </input>';
+        document.body.innerHTML += '<input type="button" value="Viewer" onclick="location.href ='+"'html/Viewer.html'"+'"></input>';
+        socket.on('choiceRoom',function(data){
+        document.getElementById('error-container').innerHTML = data.roomlist;
+        })
+    });
+    
+
+    function setUsername() {
+        socket.emit('setUsername', document.getElementById('name').value);
+        
+    };
+</script>
+
+<body>
+    <div id="error-container"></div>
+    <input id="name" type="text" name="name" value="" placeholder="Enter your name!">
+    <button type="button" name="button" onclick="setUsername()">
+        Let me chat!
+    </button>
+    </div>
+</body>
+
+</html>

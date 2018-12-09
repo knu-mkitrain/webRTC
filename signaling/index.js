@@ -19,26 +19,66 @@ app.get('/', function (req, res) {
 var viewers = {};
 var broadCasters = {};
 var rooms = {};
+var roomNum = 0;
+var username;
+users = [];
+userarrayforlist = [];
 
 // connection이 발생할 때 핸들러를 실행한다.
 io.on('connection', function (socket) {
+    socket.on('join', function (data) {
+        socket.join(data.room);
+        username = data.user_name;
+    })
+
+    socket.emit('choiceRoom',{
+        roomlist : rooms
+    });
+
+    socket.on('setUsername', function (data) {
+        if (users.indexOf(data) == -1) {
+            socket.username = data;
+            users.push(data);
+            userarrayforlist.push(data);
+            socket.emit('userSet', { "username": data });
+        } else {
+            socket.emit('userExists', data + ' username is already taken! Try some other username.');
+        }
+    });
+
     io.sockets.clients((e, c) => {
         console.log("연결됨, 현재 연결된 클라이언트의 수 : ", c.length)
+    });
+
+    socket.on('disconnect', reason => {
+        roomId = broadCasters[socket.id];
+        console.log(roomId + '  :  ' + socket.id);
+        delete rooms[roomId];
+        console.log(users);
+        console.log("지운후 모든 방의 정보", rooms);
+
+    });
+
+
+    //방송자로부터 생성할 room id를 받는다.
+    socket.on('broadCasterConnected', (data) => {
+        //rooms[roomId] 는 배열로 구성되고, 0번째 index 는 broadCaster, broadCaster의 방이 어디인지 기록한다.
+
+        rooms[data.roomId] = [socket.id];
+        broadCasters[socket.id] = data.roomId;
+        roomNum = Object.keys(rooms).length;
+
+        console.log("새로운 방을 생성합니다.", rooms[data.roomId]);
+        console.log("삽입 후 모든 방의 정보", rooms);
+
     });
 
     //client에게 연결이 되었다고 알림
     socket.emit('success', {
         "result": "success",
-        "msg": "connected successful"
-    });
-
-    //방송자로부터 생성할 room id를 받는다.
-    socket.on('broadCasterConnected', (data) => {
-        //rooms[roomId] 는 배열로 구성되고, 0번째 index 는 broadCaster, broadCaster의 방이 어디인지 기록한다.
-        rooms[data.roomId] = [socket.id];
-        broadCasters[socket.id] = data.roomId;
-        console.log("새로운 방을 생성합니다.", rooms[data.roomId]);
-        console.log("모든 방의 정보", rooms);
+        "msg": "connected successful",
+        "room_num": roomNum,
+        "username": userarrayforlist.pop()
     });
 
     //뷰어가 접속할 방을 서버에 전송한다.
@@ -50,13 +90,13 @@ io.on('connection', function (socket) {
         //room에 viewer를 push 하고, viewer 가 어느 room 에 들어간지 기록한다.
         rooms[data.roomId].push(socket.id);
         viewers[socket.id] = data.roomId;
-        console.log("방에 참가했습니다.", rooms[data.roomId]);
+        console.log("방에 참가했습니다.", rooms);
 
     });
 
     //send offerSdp to broadCaster
     socket.on('sendOfferSdp', (data) => {
-        var broadCaster = rooms[viewers[data.from]][0];
+        var broadCaster = rooms[data.room][0];
         io.to(broadCaster).emit('sendOfferSdp', {
             offerSdp: data.sdp,
             from: data.from,
@@ -72,7 +112,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('sendCandidate', (data) => {
-        console.log("send candidate", data);
+        //console.log("send candidate", data);
         io.to(data.to).emit('sendCandidate', {
             candidate: data.candidate,
             from: data.from,
@@ -81,8 +121,10 @@ io.on('connection', function (socket) {
 
     socket.on('msg', function (data) {
         //Send message to everyone
-        io.sockets.emit('newmsg', data);
+        console.log(data.room);
+        io.sockets.in(data.room).emit('newmsg', data);
     });
+
 
 
     //연결 종료

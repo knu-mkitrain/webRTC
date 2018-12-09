@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>client test : viewer</title>
@@ -17,20 +18,28 @@
 </head>
 <script>
     var socket = io.connect('http://localhost:8080/');
-    var server = {'iceServers' : [{'url':'stun:stun.l.google.com:19302'}]};
+    var server = { 'iceServers': [{ 'url': 'stun:stun.l.google.com:19302' }] };
     var connection = new RTCPeerConnection(server);
 
     var user;
+    var viewerroom;
+    var user_name ;
     //set on addstream
     connection.onaddstream = (e) => onAddStream(e);
 
     socket.on('success', function (data) {
-        console.log("연결 성공",data);
-        
+        console.log("연결 성공", data.result);
+
         user = socket.id;
+        user_name = data.username;
+        viewerroom = data.room_num-1;
+        socket.emit('join',{
+            "room":viewerroom,
+            "user_name":user_name});
+        console.log(viewerroom);
         //내가 viewer임을 서버에 알리고, 접속할 roomId를 전송
-        socket.emit('viewerConnected',{
-            roomId:"roomnumber1"
+        socket.emit('viewerConnected', {
+            roomId: data.room_num-1
         });
 
         //create offer
@@ -38,73 +47,69 @@
             offerToReceiveAudio: 1,
             offerToReceiveVideo: 1
         })
-            .then((offerSdp)=>{
+            .then((offerSdp) => {
                 //set localSdp
-                connection.setLocalDescription(offerSdp).then(()=>{console.log('Local SDP OK',offerSdp);});
+                connection.setLocalDescription(offerSdp).then(() => { console.log('Local SDP OK', offerSdp); });
                 //set remoteSdp
-                socket.emit('sendOfferSdp',{
-                    from:socket.id,
-                    sdp:offerSdp,
+                socket.emit('sendOfferSdp', {
+                    from: socket.id,
+                    sdp: offerSdp,
+                    "room":viewerroom
                 })
             });
     });
 
     //get answerSdp
-    socket.on('sendAnswerSdp',function(data){
+    socket.on('sendAnswerSdp', function (data) {
         //set on candidate
-        connection.onicecandidate = (e) => onCandidate(e,data.from);
+        connection.onicecandidate = (e) => onCandidate(e, data.from);
 
         var remoteSdp = data.answerSdp;
         //set remoteSdp
         connection.setRemoteDescription(remoteSdp)
-            .then(()=>{
-                console.log('Remote SDP OK',remoteSdp);
+            .then(() => {
+                console.log('Remote SDP OK', remoteSdp);
             });
     });
 
     //get candidate
-    socket.on('sendCandidate',function(data){
+    socket.on('sendCandidate', function (data) {
         connection.addIceCandidate(data.candidate);
     });
 
 
     //end broadcasting
-    socket.on('broadCastingEnd',function(data){
+    socket.on('broadCastingEnd', function (data) {
         connection.close();
-        console.log("방송이 종료되었습니다.",data);
+        console.log("방송이 종료되었습니다.", data);
     });
 
-    function onCandidate(e,from){
-        console.log("candidate event emit",e);
-        if(e.candidate){
-            socket.emit('sendCandidate',{
-                from:socket.id,
-                to:from,
-                candidate:e.candidate
+    function onCandidate(e, from) {
+        console.log("candidate event emit", e);
+        if (e.candidate) {
+            socket.emit('sendCandidate', {
+                from: socket.id,
+                to: from,
+                candidate: e.candidate
             })
         }
     }
-    function onAddStream(e){
+    function onAddStream(e) {
         const video = document.querySelector('video');
         video.srcObject = e.stream;
     }
 
-    function sendMessage() {
-        var msg = document.getElementById('message').value;
-        if (msg) {
-            socket.emit('msg', { message: msg, user: user });
-        }
-    }
+    
 
-    socket.on('newmsg', function (data){
+    socket.on('newmsg', function (data) {
         var container = document.getElementById("message-container");
-        container.innerHTML += createMessage(data.user,data.message);
+        container.innerHTML += createMessage(data.user, data.message);
         container.lastChild.scrollIntoView() //auto scroll to last chat
     });
 
-    function createMessage(user,message){
+    function createMessage(user, message) {
         return "<div>" +
-            "<b>"+user+"</b> : " +
+            "<b>" + user + "</b> : " +
             message +
             "</div>";
     }
@@ -112,13 +117,13 @@
     function sendMessage() {
         var msg = document.getElementById('message').value;
         if (msg) {
-            socket.emit('msg', { message: msg, user: user });
+            socket.emit('msg', { message: msg, user: user_name,"room" : viewerroom });
         }
     }
 
     //앤터키 반응 함수
-    function onEnter(keycode){
-        if(keycode != 13) return;
+    function onEnter(keycode) {
+        if (keycode != 13) return;
         sendMessage();
         document.getElementById("message").value = "";
     }
@@ -126,13 +131,14 @@
 </script>
 
 <body>
-<div>
-    <video autoplay playsinline style="width:100vw;height:60vh; background-color:black;"></video>
-    <div id="message-container" style="width:100vw;height:35vh; overflow:scroll"></div>
-</div>
-<div style="display:flex; height:4.5vh;">
-    <input style="flex:9" type = "text" value = "" onkeypress="onEnter(event.keyCode)" id="message">
-    <button style="flex:1" type="button" name="button" onclick="sendMessage()">Send</button>
-</div>
+    <div>
+        <video autoplay playsinline style="width:100vw;height:60vh; background-color:black;"></video>
+        <div id="message-container" style="width:100vw;height:35vh; overflow:scroll"></div>
+    </div>
+    <div style="display:flex; height:4.5vh;">
+        <input style="flex:9" type="text" value="" onkeypress="onEnter(event.keyCode)" id="message">
+        <button style="flex:1" type="button" name="button" onclick="sendMessage()">Send</button>
+    </div>
 </body>
+
 </html>

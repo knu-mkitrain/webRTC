@@ -20,20 +20,30 @@
 
     var connections = {};
     var user;
-
+    var user_name;
+    var this_room_num;
     socket.on('success',
         function (data) {
             console.log("연결 성공",data);
             console.log("id",socket.id);
+            
 
             user = socket.id;
-
+            user_name = data.username;
+            console.log(user_name);
+            this_room_num = data.room_num;
+            socket.emit('join',{
+                "room":this_room_num,
+                "user_name" :user_name});
             getUesrMedia();
-
+    
             //내가 broad caster임을 서버에 알리고, 생성할 roomId를 전송
             socket.emit('broadCasterConnected',{
-                roomId:"roomnumber1"
+                roomId: data.room_num
             });
+            
+
+
         }
     );
 
@@ -65,10 +75,11 @@
                 //set localSdp
                 curPeerConnection.setLocalDescription(answerSdp).then(()=>{console.log('Local SDP OK',answerSdp);});
                 //send answerSdp
+                console.log('this room number : '+this_room_num);
                 socket.emit('sendAnswerSdp',{
                     to:from,
                     from:socket.id,
-                    sdp:answerSdp,
+                    sdp:answerSdp
                 });
 
             });
@@ -113,6 +124,7 @@
     }
 
     socket.on('newmsg', function (data){
+        console.log('new message : '+data.user_name);
         var container = document.getElementById("message-container");
         container.innerHTML += createMessage(data.user,data.message);
         container.lastChild.scrollIntoView() //auto scroll to last chat
@@ -128,7 +140,7 @@
     function sendMessage() {
         var msg = document.getElementById('message').value;
         if (msg) {
-            socket.emit('msg', { message: msg, user: user });
+            socket.emit('msg', { message: msg, user: user_name,"room" : this_room_num });
         }
     }
 
