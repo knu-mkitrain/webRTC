@@ -1,28 +1,16 @@
 <!DOCTYPE html>
-<html lang="first home">
-
+<html lang="ko">
 <head>
-    <title>
-        First Page
-    </title>
-
+    <title>First Page</title>
 </head>
 
 <script src="./js/socket.io.js"></script>
 <script>
     var socket = io.connect('http://localhost:8080/');
     var user;
- //var broadcaster = html/broadcaster.html;
-   // var viewer = html/Viewer.html;
 
-    socket.on('roomChoice', function (data) {
-        console.log(data.rooms);
-        var keys = Object.keys(data.rooms);
-        // document.body.innerHTML = " "; 
-        for (var i in keys) {
-            // document.getElementById('room').innerHTML += '<div>'+keys[i]+'  '+data.rooms[keys[i]]+'</div>';
-        }
-
+    socket.on('roomList',function(data){
+        console.log("room list",data);
     });
 
     socket.on('userExists', function (data) {
@@ -30,28 +18,109 @@
     });
 
     socket.on('userSet',function(data){
-        user = data.username;
-        document.body.innerHTML = '<div>username : '+user+'</div>';
-        document.body.innerHTML += '<input type="button" value="Broadcaster" onclick="location.href ='+"'/broadcaster'"+'"> </input>';
-        document.body.innerHTML += '<input type="button" value="Viewer" onclick="location.href ='+"'/viewer'"+'"></input>';
-        socket.on('choiceRoom',function(data){
-        document.getElementById('error-container').innerHTML = data.roomlist;
-        })
+        document.getElementById("user-name").innerText = data.username;
     });
 
     function setUsername() {
         socket.emit('setUsername', document.getElementById('name').value);
-        
-    };
+        toggleSection();
+    }
+
+    function toggleSection(){
+        var sec1 = document.getElementById("section-1");
+        var sec2 = document.getElementById("section-2");
+        if(sec1.classList.contains("hide")){
+            sec1.classList.remove("hide");
+            sec2.classList.add("hide");
+        } else {
+            sec1.classList.add("hide");
+            sec2.classList.remove("hide");
+        }
+    }
 </script>
 
 <body>
-    <div id="error-container"></div>
-    <input id="name" type="text" name="name" value="" placeholder="Enter your name!">
-    <button type="button" name="button" onclick="setUsername()">
-        Let me chat!
-    </button>
+<div id="error-container"></div>
+<div class="input-container">
+    <div id="section-1">
+        <h2>Please Enter your name</h2>
+        <input id="name" type="text" name="name" value="" placeholder="name">
+        <button type="button" name="button" onclick="setUsername()">JOIN</button>
     </div>
+
+    <div id="section-2" class="hide">
+        <p>User name : <span id="user-name"></span></p>
+        <div id="room-container">
+            <!--<div class="room-row">방제</div>-->
+        </div>
+        <input type="button" value="방송하기" onclick="location.href='/broadcaster'" />;
+    </div>
+</div>
 </body>
 
+<style>
+    .hide {
+        display:none;
+    }
+    html * {
+        box-sizing: border-box;
+        font-family:san-serif;
+    }
+    html{
+        width:100%;
+        height:100%;
+        background-color:#333;
+    }
+    body{
+        height:50%;
+    }
+    h2,p{
+        color:white;
+    }
+    .input-container{
+        width:100%;
+        height:100%;
+        display:flex;
+        align-items:center;
+        justify-content: center;
+        flex-direction:column;
+        box-sizing: border-box;
+    }
+    input#name{
+        background-color:transparent;
+        border:none;
+        border-bottom:1px solid white;
+        color:white;
+        height:25px;
+        width:150px;
+        font-weight:bold;
+        font-size:17px;
+    }
+    button, input[type=button] {
+        color:#fff;
+        background-color: #2b7ef8;
+        border:none;
+        padding:10px 50px 10px 50px;
+        font-size:15px;
+        margin:20px;
+    }
+    #room-container{
+        width:300px;
+        height:400px;
+        background-color:#fff;
+        overflow:scroll;
+    }
+    #section-2{
+        height:400px;
+        text-align:center;
+    }
+    .room-row{
+        height:50px;
+        background-color:#ccc;
+        margin:5px;
+        display:flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
 </html>
