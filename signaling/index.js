@@ -32,19 +32,18 @@ var roomNum = 0;
 var username;
 users = [];
 userarrayforlist = [];
-var broadCasterlist =[];
 
 // connection이 발생할 때 핸들러를 실행한다.
 io.on('connection', function (socket) {
-    
+
+    io.sockets.clients((e, c) => {
+        console.log("연결됨, 현재 연결된 클라이언트의 수 : ", c.length)
+    });
+
     socket.on('join', function (data) {
         socket.join(data.room);
         username = data.user_name;
     })
-
-    socket.emit('roomList',{
-        roomlist : broadCasterlist
-    });
 
     socket.on('setUsername', function (data) {
         if (users.indexOf(data) == -1) {
@@ -57,10 +56,6 @@ io.on('connection', function (socket) {
         }
     });
 
-    io.sockets.clients((e, c) => {
-        console.log("연결됨, 현재 연결된 클라이언트의 수 : ", c.length)
-    });
-
     socket.on('disconnect', reason => {
         roomId = broadCasters[socket.id];
         console.log(roomId + '  :  ' + socket.id);
@@ -70,7 +65,6 @@ io.on('connection', function (socket) {
 
     });
 
-
     //방송자로부터 생성할 room id를 받는다.
     socket.on('broadCasterConnected', (data) => {
         //rooms[roomId] 는 배열로 구성되고, 0번째 index 는 broadCaster, broadCaster의 방이 어디인지 기록한다.
@@ -78,22 +72,11 @@ io.on('connection', function (socket) {
         rooms[data.roomId] = [socket.id];
         broadCasters[socket.id] = data.roomId;
         roomNum = Object.keys(rooms).length;
-        var broacaterdata = {name: data.broadcastername,room : data.roomId};
-        broadCasterlist.push(broacaterdata);
+
         console.log("새로운 방을 생성합니다.", rooms[data.roomId]);
         console.log("삽입 후 모든 방의 정보", rooms);
 
     });
-
-    //client에게 연결이 되었다고 알림
-    socket.emit('success', {
-        "result": "success",
-        "msg": "connected successful",
-        "room_num": roomNum,
-        "username": userarrayforlist.pop()
-    });
-
-    
 
     //뷰어가 접속할 방을 서버에 전송한다.
     socket.on('viewerConnected', (data) => {
@@ -143,7 +126,6 @@ io.on('connection', function (socket) {
     });
 
 
-
     //연결 종료
     socket.on('disconnecting', (reason) => {
         //만약 방송자이면, 방 참가자들에게 종료 이벤트를 내보내고 방을 제거한다.
@@ -169,4 +151,17 @@ io.on('connection', function (socket) {
             console.log("방에서 성공적으로 제외되었습니다.", rooms[roomId]);
         }
     })
+
+
+    //client에게 연결이 되었다고 알림
+    socket.emit('success', {
+        "result": "success",
+        "msg": "connected successful",
+        "room_num": roomNum,
+        "username": userarrayforlist.pop()
+    });
+
+    socket.emit('choiceRoom',{
+        roomlist : rooms
+    });
 });
