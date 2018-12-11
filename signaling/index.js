@@ -1,19 +1,28 @@
 
 const _ = require('lodash');
-const app = require('express')();
+const express = require("express");
+const http = require("http");
 const cors = require('cors');
+const socket = require('socket.io');
+const path = require("path");
 
-app.use(cors());
-
-const server = require('http').Server(app);
-const io = require('socket.io')(server);
+const app = express();
+const server = http.Server(app);
+const io = socket(server);
 
 server.listen(8080, function () {
     console.log("listening");
 });
 
-app.get('/', function (req, res) {
-    res.send('<p>Server running</p>')
+app.use(cors());
+app.use(express.static(path.join(__dirname,"../front")));
+
+app.get('/broadcaster', function (req, res) {
+    res.sendFile(path.join(__dirname,"../front/html/broadcaster.html"));
+});
+
+app.get('/viewer', function (req, res) {
+    res.sendFile(path.join(__dirname,"../front/html/viewer.html"));
 });
 
 var viewers = {};

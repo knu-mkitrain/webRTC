@@ -32,13 +32,12 @@
     socket.on('userSet',function(data){
         user = data.username;
         document.body.innerHTML = '<div>username : '+user+'</div>';
-        document.body.innerHTML += '<input type="button" value="Broadcaster" onclick="location.href ='+"'html/broadcaster.html'"+'"> </input>';
-        document.body.innerHTML += '<input type="button" value="Viewer" onclick="location.href ='+"'html/Viewer.html'"+'"></input>';
+        document.body.innerHTML += '<input type="button" value="Broadcaster" onclick="location.href ='+"'/broadcaster'"+'"> </input>';
+        document.body.innerHTML += '<input type="button" value="Viewer" onclick="location.href ='+"'/viewer'"+'"></input>';
         socket.on('choiceRoom',function(data){
         document.getElementById('error-container').innerHTML = data.roomlist;
         })
     });
-    
 
     function setUsername() {
         socket.emit('setUsername', document.getElementById('name').value);
