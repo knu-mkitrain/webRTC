@@ -93,6 +93,8 @@ io.on('connection', function (socket) {
         "username": userarrayforlist.pop()
     });
 
+    
+
     //뷰어가 접속할 방을 서버에 전송한다.
     socket.on('viewerConnected', (data) => {
         if (!rooms[data.roomId]) {
@@ -103,7 +105,10 @@ io.on('connection', function (socket) {
         rooms[data.roomId].push(socket.id);
         viewers[socket.id] = data.roomId;
         console.log("방에 참가했습니다.", rooms);
-
+        socket.emit('listforbroadcaster',{
+            client : rooms[data.roomId],
+            name : data.username
+        });
     });
 
     //send offerSdp to broadCaster
