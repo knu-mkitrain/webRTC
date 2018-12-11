@@ -39,7 +39,8 @@
     
             //내가 broad caster임을 서버에 알리고, 생성할 roomId를 전송
             socket.emit('broadCasterConnected',{
-                roomId: data.room_num
+                roomId: data.room_num,
+                broadcastername : user_name
             });
             
 
