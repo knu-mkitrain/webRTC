@@ -97,7 +97,10 @@ io.on('connection', function (socket) {
         rooms[data.roomId].push(socket.id);
         viewers[socket.id] = data.roomId;
         console.log("방에 참가했습니다.", rooms);
-
+        socket.emit('listforbroadcaster',{
+            client : rooms[data.roomId],
+            name : data.username
+        });
     });
 
     //send offerSdp to broadCaster

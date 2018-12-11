@@ -48,6 +48,11 @@
         }
     );
 
+    socket.on('listforbroadcaster',function(data){
+        
+    });
+
+
     //get offer Sdp
     socket.on('sendOfferSdp',function(data){
         var remoteSdp = data.offerSdp;
