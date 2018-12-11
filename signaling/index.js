@@ -49,7 +49,7 @@ io.on('connection', function (socket) {
 
     socket.on('setUsername', function (data) {
         if (users.indexOf(data) == -1) {
-            socket.username = data;
+            data.username = data;
             users.push(data);
             userarrayforlist.push(data);
             socket.emit('userSet', { "username": data });
@@ -77,6 +77,11 @@ io.on('connection', function (socket) {
 
         var broacaterdata = {name: data.broadcastername,room : data.roomId};
         broadCasterlist.push(broacaterdata);
+
+        io.emit('roomList', {
+            roomlist: broadCasterlist
+        });
+
         console.log("새로운 방을 생성합니다.", rooms[data.roomId]);
         console.log("삽입 후 모든 방의 정보", rooms);
 

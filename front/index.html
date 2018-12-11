@@ -11,14 +11,14 @@
 
     socket.on('roomList',function(data){
         console.log("room list",data);
-    });
+        var html = "";
 
-    socket.on('roomList',function(data){
-        var list=[];
-        list = data.roomlist;
-        for(i=0;i<list.length;i++){
-         console.log(list[i]);
-        }
+        data.roomlist.forEach((item)=>{
+            if(item.name)
+                html += "<div class='room-row' onclick='linkTo(\"/viewer?room=" + item.room + "\")'>" + item.name + "</div>";
+        });
+
+        document.getElementById("room-container").innerHTML = html;
     });
 
     socket.on('userExists', function (data) {
@@ -44,6 +44,9 @@
             sec1.classList.add("hide");
             sec2.classList.remove("hide");
         }
+    }
+    function linkTo(url){
+        location.href = url;
     }
 </script>
 
