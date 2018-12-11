@@ -13,6 +13,14 @@
         console.log("room list",data);
     });
 
+    socket.on('roomList',function(data){
+        var list=[];
+        list = data.roomlist;
+        for(i=0;i<list.length;i++){
+         console.log(list[i]);
+        }
+    });
+
     socket.on('userExists', function (data) {
         document.getElementById('error-container').innerHTML = data;
     });
