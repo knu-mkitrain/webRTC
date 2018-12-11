@@ -32,6 +32,8 @@ var roomNum = 0;
 var username;
 users = [];
 userarrayforlist = [];
+var broadCasterlist =[];
+
 
 // connection이 발생할 때 핸들러를 실행한다.
 io.on('connection', function (socket) {
@@ -73,6 +75,8 @@ io.on('connection', function (socket) {
         broadCasters[socket.id] = data.roomId;
         roomNum = Object.keys(rooms).length;
 
+        var broacaterdata = {name: data.broadcastername,room : data.roomId};
+        broadCasterlist.push(broacaterdata);
         console.log("새로운 방을 생성합니다.", rooms[data.roomId]);
         console.log("삽입 후 모든 방의 정보", rooms);
 
@@ -158,7 +162,7 @@ io.on('connection', function (socket) {
         "username": userarrayforlist.pop()
     });
 
-    socket.emit('choiceRoom',{
-        roomlist : rooms
-    });
+    socket.emit('roomList', {
+        roomlist: broadCasterlist
+    })
 });
