@@ -39,7 +39,8 @@
         console.log(viewerroom);
         //내가 viewer임을 서버에 알리고, 접속할 roomId를 전송
         socket.emit('viewerConnected', {
-            roomId: data.room_num-1
+            roomId: data.room_num-1,
+            username : user_name
         });
 
         //create offer
